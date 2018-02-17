@@ -1,0 +1,95 @@
+---
+title: "seminar1"
+author: "bibaev"
+date: "2/14/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Задача 1
+``` {r imports}
+library(moments)
+```
+
+Самое интересно - функция, которая считает статистики
+```{r function definition}
+mysummary = function(sample)
+{
+  n <- length(sample)
+  min <- min(sample)
+  max <- max(sample)
+  mean <- mean(sample)
+  var <- var(sample)
+  sd <- sqrt(var)
+  not_corrected_var <- ((n - 1) / n) * var
+  v <- (sd / mean) * 100
+  q1 <- quantile(sample, probs=c(0.25))
+  q3 <- quantile(sample, probs=c(0.75))
+  return (c(min, max, max - min, mean, var, not_corrected_var, sd, median(sample), q1, q3, v, skewness(sample), kurtosis(sample) - 3))
+}
+```
+
+Добавим детерминизма
+``` {r seed}
+set.seed(42)
+```
+
+Мат. ожидание у всех совокупностей равно 10.
+```{r generation}
+summary_rows = c('min:','max:','Razmax:','mean:','var:', 'not corrected var:  ', 'sd:','median:', 'q1:', 'q3:', 'Variation coef:','Skewness:', 'Kurtosis:')
+sample_length = 100
+sample_norm <- rnorm(sample_length, mean = 10, sd = 2)
+sample_exp <-rexp(sample_length,rate=0.1)
+sample_unif<-runif(sample_length,0, 20)
+sample_binom = rbinom(sample_length, 3, 0.3)
+vars_norm = mysummary(sample_norm)
+vars_exp = mysummary(sample_exp)
+vars_unif = mysummary(sample_unif)
+vars_binom = mysummary(sample_binom)
+vars = data.frame(cbind(vars_norm,vars_exp,vars_unif,vars_binom), row.names = summary_rows)
+names(vars) = c('Normal','Exponential','Uniform','Binom')
+```
+
+```{r print results}
+print(round(vars, 2))
+```
+
+``` {r histograms}
+hist(sample_norm, freq = FALSE, col = rgb(1, 0, 0, 0.25))
+hist(sample_exp, freq = FALSE, col = rgb(0, 1, 0, 0.25))
+hist(sample_unif, freq = FALSE, col = rgb(0, 0, 1, 0.25))
+hist(sample_binom, freq = FALSE, col = rgb(1, 1, 0, 0.25))
+```
+
+``` {r boxplot}
+boxplot(sample_norm,sample_exp, sample_unif, sample_binom, names = c("norm", "exp", "uniform", "binom"))
+```
+
+# Задание 2. Проверка однородности
+``` {r samples}
+sample1 = rnorm(n = 80, mean = 0, sd = 2)
+sample2 = rnorm(n = 60, mean = 6, sd = 4)
+combined_sample = append(sample1, sample2)
+vars_combined = mysummary(combined_sample)
+```
+
+``` {r print summary}
+frame = data.frame(cbind(vars_combined), row.names = summary_rows)
+names(frame) = c("combiner")
+print(round(frame, 2))
+```
+
+``` {r draw histogram}
+histogram = hist(x = combined_sample, col = rgb(1, 0, 1, 0.5))
+lines(histogram$mids, histogram$counts)
+rug(combined_sample) # add observations to the axis
+```
+
+Note: На графике 2 пика, это может говорить о том, что совокупность является смесью двух распределений.
+
+``` {r draw empirical distribution function}
+plot(ecdf(combined_sample))
+```
+Note: Часть графика, относящаяся к второй выборке более пологая. Это может сказать о том, что в ней больше дисперсия, а так же, что доля второй выборки меньше
