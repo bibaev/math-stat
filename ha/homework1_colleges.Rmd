@@ -1,0 +1,61 @@
+---
+title: "homework1_colleges"
+author: "bibaev"
+date: "2/19/2018"
+output: html_document
+---
+
+``` {r imports}
+library(moments)
+```
+
+## Задача "Колледжи"
+``` {r read data}
+data = read.table("data/college.txt", header = TRUE, sep = '\t')
+data
+```
+
+Разделим наблюдения на две выборки: выборка по исследовательским университетам и выборка по институтам искусств.
+``` {r separation}
+splitted_data = split(data, f = data$School_Type)
+universities = splitted_data$Univ
+arts = splitted_data$`Lib Arts`
+head(universities)
+head(arts)
+```
+
+``` {r boxplots}
+boxplot(universities$SAT, arts$SAT, names = c("university", "arts"))
+boxplot(universities$Acceptance, arts$Acceptance, names = c("university", "arts"))
+boxplot(universities$X..Student, arts$X..Student, names = c("university", "arts"))
+boxplot(universities$Top.10., arts$Top.10., names = c("university", "arts"))
+boxplot(universities$X.PhD, arts$X.PhD, names = c("university", "arts"))
+boxplot(universities$Grad., arts$Grad., names = c("university", "arts"))
+```
+
+Постройте гистограммы по каждой из характеристик (SAT ... Grad%) для каждого типа институтов. 
+``` {r histograms}
+draw_hist = function(sample_extractor, title) {
+  hist(sample_extractor(universities), col = rgb(1, 0, 0, 0.3), main = title)
+  hist(sample_extractor(arts), col = rgb(0, 1, 0, 0.3), add = T)
+  legend("topleft", c("Universities", "Art Schools"), col=c("red", "green"), lwd = 7)
+}
+
+draw_hist(sample_extractor = { function(x) x$SAT }, title = "SAT")
+draw_hist(sample_extractor = { function(x) x$Acceptance }, title = "Acceptance")
+draw_hist(sample_extractor = { function(x) x$X..Student }, title = "$ per student")
+draw_hist(sample_extractor = { function(x) x$Top.10. }, title = "Top 10%")
+draw_hist(sample_extractor = { function(x) x$X.PhD }, title = "% PhD")
+draw_hist(sample_extractor = { function(x) x$Grad. }, title = "Graduated rate")
+```
+
+Найдите
+
+* выборочное среднее SAT школ искусств, 
+* 3й выборочный квартиль Acceptance университетов
+* название института(колледжа), в котором тратят денег в среднем на одного студента больше, чем в других институтах(колледжах)
+``` {r statistics}
+sprintf("art school mean(SAT) = %.2f", mean(arts$SAT))
+sprintf("universities q3(Acceptance) = %.2f", quantile(universities$Acceptance, probs = c(0.75)))
+print(universities[which.max(universities$X..Student),])
+```

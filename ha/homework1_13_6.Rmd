@@ -1,0 +1,54 @@
+---
+title: "stepic"
+author: "bibaev"
+date: "2/17/2018"
+output: html_document
+---
+
+``` {r imports}
+library(moments)
+```
+
+## Задача "13е число"
+``` {r read data}
+data = read.table('data/13_6', sep='\t',header=F)
+colnames(data) = c("type", "month", "buyers_6", "buyers_13", "market")
+head(data)
+buyers_13 <- data$buyers_13
+sprintf("size of sample = %d", length(buyers_13))
+```
+
+``` {r summary}
+sprintf("mean = %.2f", mean(buyers_13))
+sprintf("median = %.2f", median(buyers_13))
+n = length(buyers_13)
+not_corrected = ((n - 1) / n) * var(buyers_13)
+sprintf("variance = %.1f", not_corrected)
+```
+Постройте выборку из разницы числа людей, приходящих в магазин  13го и 6го числа каждого месяца
+
+Найдите
+
+* выборочное среднее, 
+* выборочный коэффициент эксцесса
+* выборочный коэффициент асимметрии
+разницы числа покупателей (13 - 6).
+``` {r solution}
+delta_buyers = data$buyers_13 - data$buyers_6
+sprintf("mean = %.2f", mean(delta_buyers))
+sprintf("kurtosis = %.2f", kurtosis(delta_buyers) - 3)
+sprintf("skewness = %.2f", skewness(delta_buyers))
+```
+
+Постройте гистограммы числа покупателей 13го и 6го числа, а также гистограмму разницы числа посетителей. Постройте ящики с усами числа покупателей 13го и 6го числа, а также их разницы
+``` {r histograms}
+buyers_6 = data$buyers_6
+hist(buyers_13, col = rgb(0, 0, 1, 0.15))
+hist(buyers_6, col = rgb(0, 1, 0, 0.15))
+hist(delta_buyers, col = rgb(1, 0, 0, 0.15))
+```
+
+``` {r boxes}
+boxplot(buyers_13, buyers_6, delta_buyers)
+boxplot(delta_buyers)
+```
