@@ -1,0 +1,122 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Семинар 2
+``` {r seed}
+set.seed(42)
+```
+
+``` {r uncorrect}
+not_corrected_variance = function(value, n) {
+  return(n * value / (n - 1))
+}
+```
+
+``` {r function definition}
+MEAN = 10
+VARIANCE = 16
+
+var_count = function(sample_size, n) {
+  variances = c()
+  not_corrected_variances = c()
+  i = 1
+  while(i <= n) {
+    sample = rnorm(n = sample_size, mean = MEAN, sd = sqrt(VARIANCE))
+    variances[i] = var(sample)
+    not_corrected_variances[i] = not_corrected_variance(variances[i], sample_size)
+    i = i + 1
+  }
+  
+  mean_variances = mean(variances)
+  mean_not_corrected = mean(not_corrected_variances)
+  
+  boxplot(variances, not_corrected_variances, names = c("corrected", "not corrected"))
+  title(sprintf("N = %d", sample_size))
+  abline(h = mean_variances, col = "red")
+  abline(h = mean_not_corrected, col = "green")
+  abline(h = VARIANCE, col = "pink")
+  
+  x = seq(-10, 30, 0.1)
+  plot(x, dnorm(x,mean=MEAN, sd = sqrt(VARIANCE)), type = "l", main=sprintf("N =%s",sample_size))
+  lines(x, dnorm(x,mean=MEAN, sd = sqrt(mean_variances) ), type = 'l',col="red")
+  lines(x, dnorm(x,mean=MEAN, sd = sqrt(mean_not_corrected) ),type = 'l',col="green")
+}
+```
+
+``` {r evaluation}
+var_count(30,1000)
+var_count(1000, 1000)
+```
+
+Выводы:
+* TODO
+
+## Задание 2
+``` {r median plots}
+median_ok = function(sample_size, n) {
+  means = c()
+  medians = c()
+  i = 1
+  while(i <= n) {
+    sample = rnorm(n = sample_size, mean = MEAN, sd = sqrt(VARIANCE))
+    means[i] = mean(sample)
+    medians[i] = median(sample)
+    i = i + 1
+  }
+  
+  mean_means = mean(means)
+  mean_medians = mean(medians)
+  
+  boxplot(means, medians, names = c("means", "medians"))
+  title(sprintf("N = %d", sample_size))
+  abline(h = mean_means, col = "red")
+  abline(h = mean_medians, col = "green")
+  abline(h = VARIANCE, col = "pink")
+}
+```
+
+``` {r start}
+median_ok(30, 1000)
+median_ok(1000, 1000)
+```
+
+
+## Задание 3
+``` {r task 3}
+sample = rnorm(1000, mean = MEAN, sd = sqrt(VARIANCE))
+noise = rnorm(10, mean = 20 * MEAN, sd = sqrt(VARIANCE))
+merged = append(sample, noise)
+print(sprintf("mean = %.2f", mean(merged)))
+print(sprintf("median = %.2f", median(merged)))
+print(sprintf("trimmed = %.2f", mean(merged, trim = 0.05)))
+```
+
+``` {r noisy sample}
+noisy_plots = function(sample_size, n) {
+  means = c()
+  medians = c()
+  means_trimmed_5 = c()
+  means_trimmed_10 = c()
+  
+  i = 1
+  while(i <= n) {
+    default = rnorm(n = sample_size, mean = MEAN, sd = sqrt(VARIANCE))
+    noise = rnorm(n = sample_size / 100, mean = MEAN * 20, sd = sqrt(VARIANCE))
+    sample = append(default, noise)
+    means[i] = mean(sample)
+    medians[i] = median(sample)
+    means_trimmed_5 = mean(sample, trim = 0.05)
+    means_trimmed_10 = mean(sample, trim = 0.1)
+    i = i + 1
+  }
+  
+  boxplot(medians, means, means_trimmed_5, means_trimmed_10, names = c("medians", "means", "means - 5%", "means - 10%"))
+}
+```
+
+``` {r task 3}
+noisy_plots(100, 1000)
+noisy_plots(1000, 1000)
+```
