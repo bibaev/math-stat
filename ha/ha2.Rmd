@@ -1,0 +1,120 @@
+---
+title: "ha-2"
+author: "bibaev"
+date: "2/28/2018"
+output: html_document
+---
+## Задача 5
+Функция правдоподобия имеет вид:
+
+$$\mathcal{L} = \frac{1}{(b - a)^{10}}$$
+
+Найдем значение $a$, которое максимизиует $\mathcal{L}$
+
+$$\frac{\partial \mathcal{L}}{\partial a} = \frac{10}{(b - a)^{11}}$$
+
+Обратим внимание, что производная всюду больше 0, поэтому чем больше $a$, тем больше значение функции правдоподобия. С другой стороны, значение $a$ должно не превышать, значения любого из $X_i$, т.к. это в противном случае, значение $\mathcal{L} = 0$. Таким образом максимальное допустимое значение $a$ равно:
+$$\min(X_1, X_2, ..., X_{10})$$
+
+## Задача 6
+
+Оценка выше является оценкой с помощью метода максимального правдоподобия, поэтому автоматически обладает свойством состоятельности.
+
+Интуитивно, оценка будет смещенной, потому что $\mathcal{E}(\min(X_1, X_2, ..., X_{10})) \approx  a + \frac{b - a}{10}$. По-честному у меня не получилось это посчитать. Укажите, пожалуйста, на ошибку.
+
+$$\mathcal{E}\min(X_1, X_2, ..., X_{10}) = \int\limits_{a}^b x P\{\min(X_1, X_2, ..., X_{10}) = x\} = \int\limits_{a}^b x P\{X_{(1)} = x \land \forall i > 1 : X_{(i)} \ge x\} =\\  \int\limits_{a}^b x (\frac{b - x}{b - a})^{n - 1} = ... = \frac{1}{110} (b - a) (10 a + b)$$
+
+Оценка не будет асимптотически нормальной, потому что отсутствует симметрия: значения оценки могут быть смещены к $b$, но получить такое же смещение слева от $a$ невозможно.
+
+## Задачи 9 
+Функция правдоподобия имеет вид:
+$$\mathcal{L} = p_{win}^{n_1}(1 - p_{win})^{k_1} p_{go}^{n_2} (1 - p_{go})^{k_2}$$
+
+## Задача 10
+Функция правдоподобия имеет вид:
+$$\mathcal{L} = p_{win}^{n_1}(1 - p_{win})^{k_1} p_{go_w}^{n_3} (1 - p_{go_w})^{k_3}  p_{go_l}^{n_4} (1 - p_{go_l})^{k_4}$$
+
+Где:
+
+* $n_1$ - количество побед среди всех игр.
+* $k_1$ - количество поражений среди всех игр.
+* $n_2$ - количетсво раз, когда игрок заканчивал игру = количество игроков.
+* $k_2$ - количество раз, когда игрок продолжал играть.
+* $n_3$ - количество раз, когда игрок прекращал играть после победы.
+* $k_3$ - количетсво раз, когда игрок продолжал играть после победы.
+* $n_4$ - количество раз, когда игрок прекращал играть после поражения.
+* $k_4$ - количетсво раз, когда игрок продолжал играть после поражения.
+
+Чтобы найтис оценку для каждого из параметров $p_x$ нужно прологарифмируем и продифференцируем функция правдоподобия по этому параметру:
+$$\frac{\partial \ \mathcal{\log L}}{\partial  p_x} = \frac{n}{p_x} - \frac{k}{1 - p_x} = \frac{n(1 - p_x) - kp_x}{p_x(1 - p_x)} = \frac{n - p_x(n + k)}{p_x(1 - p_x)} = 0$$
+Таким образом оценка для $p_x = \frac{n}{n + k}$. То есть доля наблюдение со свойством $x$.
+
+Программа на python, которая вычисляет все необходимые значения и расчитывает оценки:
+``` python
+import math
+
+l_count = 0
+w_count = 0
+l_last = 0
+w_last = 0
+with open('casino.txt', mode='r') as casino_file:
+    for line in casino_file.read().splitlines():
+        line.split('\t')
+        for ch in line:
+            if ch == 'L':
+                l_count += 1
+            elif ch == 'W':
+                w_count += 1
+        last_ch = line[-1]
+
+        if last_ch == 'L':
+            l_last += 1
+        elif last_ch == 'W':
+            w_last += 1
+
+continue_play_after_win = w_count - w_last
+continue_play_after_lose = l_count - l_last
+print('Win count =', w_count)
+print('Lose count =', l_count)
+print('Last result is win =', w_last)
+print('Last result is lose = ', l_last)
+print('Continue to play after win =', continue_play_after_win)
+print('Continue to play after lose =', continue_play_after_lose)
+print()
+total_players = l_last + w_last
+total_games = l_count + w_count
+p_win_estimate = w_count / total_games
+print('p_win ~', p_win_estimate)
+p_go_estimate = total_players / total_games
+print('p_go ~', p_go_estimate)
+p_go_w_estimate = w_last / (w_last + continue_play_after_win)
+print('p_go_w ~', p_go_w_estimate)
+p_go_l_estimate = l_last / (l_last + continue_play_after_lose)
+print('p_go_l ~', p_go_l_estimate)
+log_mle_value1 = w_count * math.log(p_win_estimate) + l_count * math.log(1 - p_win_estimate) +\
+                 total_players * math.log(p_go_estimate) + \
+                 (continue_play_after_win + continue_play_after_lose) * math.log(1 - p_go_estimate)
+print('log(mle1) = ', log_mle_value1)
+log_mle_value2 = w_count * math.log(p_win_estimate) + l_count * math.log(1 - p_win_estimate) + \
+                 w_last * math.log(p_go_w_estimate) + continue_play_after_win * math.log(1 - p_go_w_estimate) + \
+                 l_last * math.log(p_go_l_estimate) + continue_play_after_lose * math.log( 1 - p_go_l_estimate)
+print('log(mle2) = ', log_mle_value2)
+```
+
+Output:
+``` {plain}
+Win count = 802
+Lose count = 1181
+Last result is win = 176
+Last result is lose =  824
+Continue to play after win = 626
+Continue to play after lose = 357
+
+p_win ~ 0.4044377206253152
+p_go ~ 0.5042864346949067
+p_go_w ~ 0.2194513715710723
+p_go_l ~ 0.6977138018628282
+log(mle1) =  -2712.5069581846797
+log(mle2) =  -2483.7953266786435
+
+```
