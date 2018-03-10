@@ -1,0 +1,228 @@
+---
+title: "seminar-3"
+author: "bibaev"
+date: "3/3/2018"
+output: html_document
+---
+
+Disclaimer: К сожалению, я пропустил лекцию и семинар, поэтому условия каких-то заданий мог понять неверно. Надеюсь таких будет не сильно много.
+
+## Задание 1
+
+_Смоделируйте выборку размера N=30._
+``` {r modeling 30}
+sample_size = 30
+VARIANCE = 2
+sample = rnorm(sample_size, 5, VARIANCE)
+```
+_Постройте 95% доверительный интервал для м. о. _
+
+Предположение - дисперсия известна.
+``` {r confidence interval}
+build_inverval = function(sample, alpha, variance) {
+  mean = mean(sample)
+  u = qnorm(1 - alpha / 2, 0, 1)
+  n = length(sample)
+  addition = u * sqrt(variance / n)
+  return(c(mean - addition, mean + addition))
+}
+
+interval_str = function(interval) {
+  return(paste("[", round(interval[1], digits =  3), ", ", round(interval[2], digits = 3), "]", sep = ''))
+}
+
+alpha = 0.05
+print(interval_str(build_inverval(sample, alpha, VARIANCE)))
+```
+
+_Посмотрите, как меняется доверительный интерввал зависимости от_ 
+``` {r}
+test = function(sample_size, mean, variance, alpha) {
+  return (build_inverval(rnorm(sample_size, mean, variance), alpha = alpha, variance_value))
+}
+```
+_1. размера выборки,_
+``` {r}
+size_test = function(size) {
+  interval = build_inverval(rnorm(size, 5, 2), alpha = 0.1, 2)
+  return(interval_str(interval))
+}
+test = function() {
+  print(size_test(30))
+  print(size_test(100))
+  print(size_test(1000))
+}
+
+test()
+
+```
+
+С увеличением размера выборки длина интервала уменьшается, т.к. точные оценки, используемые при построении интервала, стремятся к своим истинным значениям.
+
+_2. дисперсии_
+``` {r variance values}
+test_variance = function(sample, variance) {
+  interval = build_inverval(sample, alpha = 0.1, variance)
+  return(interval_str(interval))
+}
+
+test = function(sample) {
+  print(test_variance(sample, 0.1))
+  print(test_variance(sample, 5))
+  print(test_variance(sample, 10))
+}
+
+test(rnorm(100, 5, VARIANCE))
+```
+Выше дисперсия $\Rightarrow$ больше разброс $\Rightarrow$ больше интервал.
+
+_3. уровня значимости (99%, 90% дов. интервалы)._
+``` {r confidence levels}
+test_alpha = function(sample, variance, alpha) {
+  interval = build_inverval(sample, alpha = alpha, variance)
+  return(interval_str(interval))
+}
+
+test = function(sample, variance) {
+  print(test_alpha(sample, variance, 0.1))
+  print(test_alpha(sample, variance, 0.05))
+  print(test_alpha(sample, variance, 0.01)) 
+}
+
+test(rnorm(100, 5, VARIANCE), VARIANCE)
+```
+
+Как видим, чем меньше значение $\alpha$, тем шире интервал. Ничего удивительного, хотим, чтобы в значение попало в интервал с большей вероятностью - интервал становится шире.
+
+_Постройте истинный доверительный интервал с помощью моделирования: 1000 раз смоделируйте выборку размера N=30 из выбранной генеральной совокупности, посчитайте выборочное среднее. У полученной выборки средних возьмите квантили [2.5%, 97.5%], сравните результаты с интервалом, полученным по формуле._
+
+``` {r}
+experiment = function(n) {
+  i = 1
+  means = c()
+  lefts = c()
+  rights = c()
+  while(i <= 1000) {
+    sample = rnorm(n, 10, 3)
+    means[i] = mean(sample)
+    interval = build_inverval(sample, 0.05, variance = 3)
+    lefts[i] = interval[1]
+    rights[i] = interval[2]
+    i = i + 1
+  }
+  
+  left = mean(lefts)
+  right = mean(rights)
+  true_interval = quantile(means, c(0.025, 0.975))
+  interval = build_inverval(rnorm(n, 10, 3), 0.05, variance = 3)
+  print(true_interval)
+  print(paste('random interval:', interval_str(interval)))
+  print(paste('mean of all invervals:', interval_str(c(left, right))))
+}
+
+experiment(30)
+```
+
+_Увеличьте размер выборки._
+``` {r}
+experiment(100)
+experiment(3000)
+```
+
+Вопросы:
+
+1. _Чем отличаются формулы для случая известной и случая неизвестной дисперсии? Проверьте, какой интервал построили Вы_
+
+Во втором случае для оценки дисперсии приходится использовать оценку, например, выборочную дисперсию. Я моем случае предполагалось, что дисперсия известна.
+
+2. _Что происходит с доверительным интервалом при увеличении дисперсии, объема выборки, уровня значимости? Почему?_
+
+Ответы выше под результатами.
+
+## Задание 2
+``` {r}
+as_interval_exp_median = function(sample, alpha) {
+  sorted_sample = sort(sample)
+  z = qnorm(1 - alpha / 2)
+  j = round(sample_size / 2 - z * sqrt(sample_size) / 2, 0)
+  k = round(sample_size / 2 + z * sqrt(sample_size) / 2, 0)
+  return(c(sorted_sample[j], sorted_sample[k]))
+}
+
+interval = as_interval_exp_median(rexp(n = 30, rate = 0.5),alpha)
+print(paste('random sample interval:', interval_str(interval)))
+```
+``` {r}
+experiment = function(sample_size, alpha) {
+  print(paste("N =", sample_size))
+
+  medians = c()
+  for (i in 1:1000) {
+    sample = sort(rexp(n = sample_size, rate = 0.5))
+    medians[i] = median(sample)
+  }
+  
+  hist(medians, freq = T)
+  print(quantile(medians, c(alpha / 2, 1 - alpha / 2)))
+}
+
+experiment(30, 0.05)
+```
+
+И с увеличенным размером выборки:
+``` {r}
+experiment(100, 0.05)
+experiment(1000, 0.05)
+```
+
+1. _Какое распределение имеет выборочная медиана при $n \to \infty$ ?_
+
+Нормальное
+
+2. _Из чего следуют формулы для доверительного интевала медианы? (каких свойств какого распределения)?_
+
+Возможно, это асимптотическая нормальность оценки парамерта $\lambda$ через медиану выборки.
+
+3. _Что происходит с увеличением $N$?_
+
+Доверительный интервал уменьшается. Распределение медианы все больше напоминает нормальное.
+
+## Задача 3
+``` {r}
+sample = rnorm(2000, 5, 2)
+means_generated = c()
+means_with_rep = c()
+means_without_rep = c()
+experiment = function(subsample_size) {
+  for (i in 1:1000) {
+    with_repetition = sample(sample, subsample_size, replace = T)
+    without_repetition = sample(sample, subsample_size, replace = F)
+    means_generated[i] = mean(rnorm(subsample_size, 5, 2) )
+    means_with_rep[i] = mean(with_repetition)
+    means_without_rep[i] = mean(without_repetition)
+  }
+  
+  boxplot(means_with_rep, means_without_rep, means_generated, names = c('with', 'without', 'not a subsample'))
+  abline(h = 5, col = "red")
+}
+
+experiment(30)
+experiment(1600)
+```
+
+Вопросы: 
+1. Как выглядит НЕСМЕЩЁННАЯ оценка для $Var(\hat{X})$?
+
+$$ Var(\hat{X}) = \frac{1}{n(n-1)} (1 - \frac{n}{N}) \sum\limits_{i = 1}^{n} (X_i - \bar{X})^2$$
+
+2. Убедитесь, что используете именно её
+
+-
+
+3. Зачем нужна поправка на конечную совокупность? Что она делает с доверительным интервалом? Почему?
+
+Чтобы учесть зависимости между извлеченными элементами. Позволяет избавиться от смещения при оценки доверительных интервалов, тем самым уменьшив их длину.
+
+4. Отличаются ли м.о. у выборок средних (п1 и п2)? Дисперсии?
+
+-

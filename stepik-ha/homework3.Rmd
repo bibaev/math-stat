@@ -1,0 +1,179 @@
+---
+title: "stepik-ha-3"
+author: "bibaev"
+date: "3/4/2018"
+output: html_document
+---
+
+``` {r utility functions}
+unif_dist = function(a, b) {
+  return(function() { runif(n = 1, min = a, max = b) })
+}
+
+simple_random_selection = function(n, w, distributions) {
+  random = unif_dist(0, 1)
+  ns = c(1, 1, 1)
+  for(i in 1:n) {
+    r = random()
+    acc = 0.0
+    j = 1
+    while(acc < r) {
+      acc = acc + w[j]
+      j = j + 1
+    }
+    j = j - 1
+    ns[j] = ns[j] + 1
+  }
+  
+  n1 = ns[1]
+  n2 = ns[2]
+  n3 = ns[3]
+  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+}
+
+proportional_selection = function(n, w, distributions) {
+  n1 = round(n * w[1], 0) + 1
+  n2 = round(n * w[2], 0) + 1
+  n3 = round(n * w[3], 0) + 1
+  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+}
+
+optimal_selection = function(n, w, distributions, vars) {
+  l = length(w)
+  sum = 0
+  for(i in 1:l) {
+    sum = sum + vars[i] * w[i]
+  }
+  
+  n1 = round(n * vars[1] * w[1] / sum, 0) + 1
+  n2 = round(n * vars[2] * w[2] / sum, 0) + 1
+  n3 = round(n * vars[3] * w[3] / sum, 0) + 1
+  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+}
+
+corrected = function(sample, avg) {
+  n = length(sample)
+  return(var(sample) * (n - 1) / n)
+}
+
+eval_average = function(means, w) {
+  n = length(w)
+  avg = 0
+  for(i in 1:n) {
+    avg = avg + w[i] * means[i]
+  }
+  return(avg)
+}
+
+eval_variance = function(avg, means, vars, w) {
+  n = length(w)
+  var = 0
+  for (i in 1:n) {
+    var = var + w[i] * vars[i] + w[i] * (avg - means[i])^2
+  }
+  
+  return(var)
+}
+
+eval_mean_variance = function(w, strata1, strata2, strata3) {
+  means = c(mean(strata1), mean(strata2), mean(strata3))
+  avg = eval_average(means = means, w = w)
+  vars = c(corrected(sample1), corrected(sample2), corrected(sample3))
+  var = eval_variance(avg = avg, means = means, vars = vars, w = w)
+  return(c(avg, var))
+}
+
+```
+
+``` {r sandbox}
+lst = c(1,2,3)
+```
+
+``` {r}
+
+build_boxplots = function(simple, prop, optimal) {
+  column = function(sample, i) {
+    n = length(simple)
+    result = c()
+    for(j in 1:n) {
+      result[j] = sample[i]
+    }
+    
+    return(result)
+  }
+  
+  print("mean")
+  boxplot(column(simple, 1), column(prop, 1), column(optimal, 1), names = c("simple", "prop", "optimal"))
+  print("variance")
+  boxplot(column(simple, 2), column(prop, 2), column(optimal, 2), names = c("simple", "prop", "optimal"))
+}
+
+unif_variance = function(params) {
+  return((params[1] - params[2])^2 / 12)
+}
+
+experiment = function(sample_size) {
+  w = c(0.6, 0.1, 0.3)
+  
+  experiment_impl = function(params1, params2, params3, message) {
+    eval = function(samples) {
+      return(eval_mean_variance(w, samples[1], samples[2], samples[3]))
+    }
+    res_simple = c()
+    res_prop = c()
+    res_optimal = c()
+    for(i in 1:10) {
+      dist1 = runif(sample_size, min = params1[1], max = params1[2])
+      dist2 = runif(sample_size, min = params2[1], max = params2[2])
+      dist3 = runif(sample_size, min = params3[1], max = params3[2])
+      
+      dists = c(dist1, dist2, dist3)
+      vars = c(unif_variance(params1), unif_variance(params2), unif_variance(params3))
+      simple_selection = simple_random_selection(n = sample_size, w = w, distributions = dists)
+      prop_selection = proportional_selection(sample_size, w = w, distributions = dists)
+      opt_selection = optimal_selection(n = sample_size, w = w, distributions = dists, vars = vars)
+      res_simple[i] = eval(simple_selection)
+      res_prop[i] = eval(prop_selection)
+      res_optimal[i] = eval(opt_selection)
+    }
+    
+    print(message)
+    build_boxplots(res_simple, res_prop, res_optimal)
+  } 
+  
+  experiment_impl(c(10, 20), c(10, 20), c(10, 20), 'same means & vars')
+  experiment_impl(c(13, 17), c(10, 20), c(0, 30), 'same means & diff vars')
+  experiment_impl(c(0, 20), c(10, 40), c(0, 60), 'diff means & diff vars')
+}
+
+set.seed(42)
+sizes = c(60, 10, 30)
+w = c(0.6, 0.1, 0.3)
+a = c(10, 13, 7)
+b = c(15, 20, 14)
+sample1 = runif(n = sizes[1], min = a[1], max = b[1])
+sample2 = runif(n = sizes[2], min = a[2], max = b[2])
+sample3 = runif(n = sizes[3], min = a[3], max = b[3])
+sample = c(sample1, sample2, sample3)
+mean = mean(sample)
+means = round(c(mean(sample1), mean(sample2), mean(sample3)), 2)
+vars = round(c(corrected(sample1), corrected(sample2), corrected(sample3)), 2)
+
+experiment(40)
+#experiment(500)
+```
+
+## Задача про измерение глубины
+
+Я не смог понять, в чем я ошибаюсь :(
+``` {r}
+bias = 100
+variance = 20^2
+alpha = 0.1
+
+u = qnorm(1 - alpha / 2, 0, 1)
+for (n in 1:10) {
+  max_error = u * variance / sqrt(n)
+  print(paste(u, max_error, n, sep = ", "))
+}
+```
