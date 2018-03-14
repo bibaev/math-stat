@@ -1,0 +1,92 @@
+---
+title: "seminar5"
+author: "bibaev"
+date: "3/14/2018"
+output: html_document
+---
+
+## Задача 1
+
+```{r}
+sample1 = c()
+sample2 = c()
+n = 100
+alpha = 0.05
+m = 5
+sd = 3
+decline1 = 0
+decline2 = 0
+for(i in 1:1000) {
+  sample = rnorm(100, mean = m, sd = sd)
+  sd_sample = sqrt(var(sample) * (n - 1) / n)
+  test1 = ks.test(sample, 'pnorm', m, sd, alternative = c("t"))
+  test2 = ks.test(sample, 'pnorm', mean(sample), sd_sample, alternative = c("t"))
+  sample1[i] = test1$statistic
+  sample2[i] = test2$statistic
+  if(test1$p.value < alpha) {
+    decline1 = decline1 + 1
+  }
+  
+  if(test2$p.value < alpha) {
+    decline2 = decline2 + 1
+  }
+}
+
+hist(sample2, col = rgb(1, 0, 0, 0.3), freq = F, xlim = c(0, 0.25))
+hist(sample1, col = rgb(0, 1, 0, 0.3), freq = F, add = T)
+
+print(decline1 / 1000)
+print(decline2 / 1000)
+```
+## Задача 2
+
+### Часть 1
+```{r}
+library("nortest")
+a = 0
+b = 30
+alpha = 0.05
+experiment = function(n, tests, names) {
+  accepts = c()
+  for(i in 1:length(names)) {
+    accepts[i] = 0
+  }
+  test_count = length(names)
+  for(i in 1:1000) {
+    sample = runif(n, min = a, max = b)
+    # browser()
+    for(i in 1:test_count) {
+      test = tests[[i]]
+      test_result = test(sample)
+      if(test_result$p.value >= alpha) {
+        accepts[i] = accepts[i] + 1
+      }
+    }
+  }
+  
+  print(paste("n =", n))
+  for(i in 1:test_count) {
+    power = (1000 - accepts[i]) / 1000
+    print(paste(names[i], " power = ", power, sep = ''))
+  }
+  
+  return()
+}
+
+ns = c(10, 20, 35, 50, 80, 100, 200, 350, 500, 700, 1000)
+
+ks_true = function(sample) {
+  return(ks.test(sample, 'pnorm', (b + a) / 2, (b - a) / sqrt(12), alternative = c("t")))
+}
+
+ks_estimated = function(sample) {
+  return(ks.test(sample, 'pnorm', mean(sample), sd(sample), alternative = c("t")))
+}
+
+for(n in ns) {
+  experiment(n, names = c("Anderson-Darling", "Lilliefors", "Kolmogorov-Smirnov true", "Kolmogorov-Smirnov estimate", "Shapiro-Wilk "), tests = c(ad.test, lillie.test, ks_true, ks_estimated, shapiro.test))
+}
+```
+### Часть 2
+
+## Задача 3
