@@ -1,5 +1,5 @@
 ---
-title: "stepik-ha-3"
+title: "homework 3"
 author: "bibaev"
 date: "3/4/2018"
 output: html_document
@@ -10,9 +10,13 @@ unif_dist = function(a, b) {
   return(function() { runif(n = 1, min = a, max = b) })
 }
 
+extract = function(ns, distributions) {
+  return(list(distributions[[1]][1:ns[1]], distributions[[2]][1:ns[2]], distributions[[3]][1:ns[3]]))
+}
+
 simple_random_selection = function(n, w, distributions) {
   random = unif_dist(0, 1)
-  ns = c(1, 1, 1)
+  ns = c(0, 0, 0)
   for(i in 1:n) {
     r = random()
     acc = 0.0
@@ -24,31 +28,29 @@ simple_random_selection = function(n, w, distributions) {
     j = j - 1
     ns[j] = ns[j] + 1
   }
-  
-  n1 = ns[1]
-  n2 = ns[2]
-  n3 = ns[3]
-  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+  return(extract(ns, distributions))
 }
 
 proportional_selection = function(n, w, distributions) {
-  n1 = round(n * w[1], 0) + 1
-  n2 = round(n * w[2], 0) + 1
-  n3 = round(n * w[3], 0) + 1
-  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+  part = function(w) {
+    return(round(n * w, 0))
+  }
+  ns = c(part(w[1]), part(w[2]), part(w[3]))
+  return(extract(ns, distributions))
 }
 
 optimal_selection = function(n, w, distributions, vars) {
   l = length(w)
   sum = 0
   for(i in 1:l) {
-    sum = sum + vars[i] * w[i]
+    sum = sum + sqrt(vars[i]) * w[i]
   }
   
-  n1 = round(n * vars[1] * w[1] / sum, 0) + 1
-  n2 = round(n * vars[2] * w[2] / sum, 0) + 1
-  n3 = round(n * vars[3] * w[3] / sum, 0) + 1
-  return(c(distributions[1][1:n1], distributions[2][1:n2], distributions[3][1:n3]))
+  n1 = round(n * sqrt(vars[1]) * w[1] / sum, 0)
+  n2 = round(n * sqrt(vars[2]) * w[2] / sum, 0)
+  n3 = round(n * sqrt(vars[3]) * w[3] / sum, 0)
+  ns = c(n1, n2, n3)
+  return(extract(ns, distributions))
 }
 
 corrected = function(sample, avg) {
@@ -78,25 +80,22 @@ eval_variance = function(avg, means, vars, w) {
 eval_mean_variance = function(w, strata1, strata2, strata3) {
   means = c(mean(strata1), mean(strata2), mean(strata3))
   avg = eval_average(means = means, w = w)
-  vars = c(corrected(sample1), corrected(sample2), corrected(sample3))
+  vars = c(corrected(strata1), corrected(strata2), corrected(strata3))
   var = eval_variance(avg = avg, means = means, vars = vars, w = w)
   return(c(avg, var))
 }
 
 ```
 
-``` {r sandbox}
-lst = c(1,2,3)
-```
 
 ``` {r}
-
 build_boxplots = function(simple, prop, optimal) {
+  # browser()
   column = function(sample, i) {
     n = length(simple)
     result = c()
     for(j in 1:n) {
-      result[j] = sample[i]
+      result[j] = sample[[j]][i]
     }
     
     return(result)
@@ -117,63 +116,44 @@ experiment = function(sample_size) {
   
   experiment_impl = function(params1, params2, params3, message) {
     eval = function(samples) {
-      return(eval_mean_variance(w, samples[1], samples[2], samples[3]))
+      return(eval_mean_variance(w, samples[[1]], samples[[2]], samples[[2]]))
     }
-    res_simple = c()
-    res_prop = c()
-    res_optimal = c()
-    for(i in 1:10) {
+    res_simple = list()
+    res_prop = list()
+    res_optimal = list()
+    for(i in 1:1000) {
       dist1 = runif(sample_size, min = params1[1], max = params1[2])
       dist2 = runif(sample_size, min = params2[1], max = params2[2])
       dist3 = runif(sample_size, min = params3[1], max = params3[2])
       
-      dists = c(dist1, dist2, dist3)
+      dists = list(dist1, dist2, dist3)
       vars = c(unif_variance(params1), unif_variance(params2), unif_variance(params3))
       simple_selection = simple_random_selection(n = sample_size, w = w, distributions = dists)
       prop_selection = proportional_selection(sample_size, w = w, distributions = dists)
       opt_selection = optimal_selection(n = sample_size, w = w, distributions = dists, vars = vars)
-      res_simple[i] = eval(simple_selection)
-      res_prop[i] = eval(prop_selection)
-      res_optimal[i] = eval(opt_selection)
+      
+      res_simple[[i]] = eval(simple_selection)
+      res_prop[[i]] = eval(prop_selection)
+      res_optimal[[i]] = eval(opt_selection)
     }
     
     print(message)
     build_boxplots(res_simple, res_prop, res_optimal)
   } 
   
+  
   experiment_impl(c(10, 20), c(10, 20), c(10, 20), 'same means & vars')
   experiment_impl(c(13, 17), c(10, 20), c(0, 30), 'same means & diff vars')
-  experiment_impl(c(0, 20), c(10, 40), c(0, 60), 'diff means & diff vars')
+  experiment_impl(c(0, 20), c(30, 70), c(-10, 100), 'diff means & diff vars')
 }
-
-set.seed(42)
-sizes = c(60, 10, 30)
-w = c(0.6, 0.1, 0.3)
-a = c(10, 13, 7)
-b = c(15, 20, 14)
-sample1 = runif(n = sizes[1], min = a[1], max = b[1])
-sample2 = runif(n = sizes[2], min = a[2], max = b[2])
-sample3 = runif(n = sizes[3], min = a[3], max = b[3])
-sample = c(sample1, sample2, sample3)
-mean = mean(sample)
-means = round(c(mean(sample1), mean(sample2), mean(sample3)), 2)
-vars = round(c(corrected(sample1), corrected(sample2), corrected(sample3)), 2)
 
 experiment(40)
-#experiment(500)
+experiment(500)
 ```
 
-## Задача про измерение глубины
+Похоже, я налажал в скрипте, но результаты получились не особо согласующиеся с теорией. Либо мне просто не повезло с константами.
 
-Я не смог понять, в чем я ошибаюсь :(
-``` {r}
-bias = 100
-variance = 20^2
-alpha = 0.1
+Выводы можно сделать следующие:
 
-u = qnorm(1 - alpha / 2, 0, 1)
-for (n in 1:10) {
-  max_error = u * variance / sqrt(n)
-  print(paste(u, max_error, n, sep = ", "))
-}
-```
+* Если все страты распределены одинаково, то без разницы в каких долях их брать
+* Иногда пропорциональное разбиение работает лучше чем простой случайный выбор.
