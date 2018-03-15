@@ -38,6 +38,7 @@ hist(sample1, col = rgb(0, 1, 0, 0.3), freq = F, add = T)
 print(decline1 / 1000)
 print(decline2 / 1000)
 ```
+
 ## Задача 2
 
 ### Часть 1
@@ -64,13 +65,16 @@ experiment = function(n, tests, names) {
     }
   }
   
-  print(paste("n =", n))
+  #print(paste("n =", n))
+  result = c()
   for(i in 1:test_count) {
     power = (1000 - accepts[i]) / 1000
-    print(paste(names[i], " power = ", power, sep = ''))
+    result[i] = power
+    #print(paste(names[i], " power = ", power, sep = ''))
+  
   }
   
-  return()
+  return(result)
 }
 
 ns = c(10, 20, 35, 50, 80, 100, 200, 350, 500, 700, 1000)
@@ -83,10 +87,33 @@ ks_estimated = function(sample) {
   return(ks.test(sample, 'pnorm', mean(sample), sd(sample), alternative = c("t")))
 }
 
+colors = c('red', 'green', 'blue', 'yellow', 'brown')
+names = c("Anderson-Darling", "Lilliefors", "Kolmogorov-Smirnov true", "Kolmogorov-Smirnov estimate", "Shapiro-Wilk ")
+tests = c(ad.test, lillie.test, ks_true, ks_estimated, shapiro.test)
+test_count = length(tests)
+results = vector("list", length = test_count)
+observation = 1
 for(n in ns) {
-  experiment(n, names = c("Anderson-Darling", "Lilliefors", "Kolmogorov-Smirnov true", "Kolmogorov-Smirnov estimate", "Shapiro-Wilk "), tests = c(ad.test, lillie.test, ks_true, ks_estimated, shapiro.test))
+  powers = experiment(n, names = names, tests = tests)
+  for(i in 1:test_count) {
+    results[[i]][observation] = powers[i]
+  }
+  
+  observation = observation + 1
 }
+
+plot(ns, results[[1]], type = 'l', ylim = c(0, 1), col = colors[1], lwd = 2)
+for(i in 2:test_count) {
+  lines(ns, results[[i]], type = 'l', col =  colors[i], lwd = 2)
+}
+
+legend(x = 'bottomright', legend = names, col = colors, lwd = 2)
 ```
+
 ### Часть 2
+```{r}
+
+```
+
 
 ## Задача 3
