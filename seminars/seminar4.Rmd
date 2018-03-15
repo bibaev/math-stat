@@ -49,32 +49,117 @@ lines(x,dt(x,df=n-1),col="green")
 
 Первого рода: хвосты зеленого графика, площадь под которыми в сумме равна $\alpha$
 
-Второго рода: Площадь пересечением
+Второго рода: Площадь пересечением центральной области под зеленым графиков (без хвостов) и области под красным графиком.
 
 ## Задача 2
 Зададим используемые константы
 ``` {r}
-a0 = 0
-a1 = 2
-h0 = 0
-h1 = 2
-variance = 5
+mu0 = 0
+mu1 = 1
+h0 = mu0
+h1 = mu1
+sd = 3
 alpha = 0.05
-beta = 0.9
+gamma = 0.99
 ```
 
-Нужно посчитать сколько раз слечилась ошибка первого рода и сколько раз случилась ошибка второго рода.
+Нужно посчитать сколько раз случилась ошибка первого рода и сколько раз случилась ошибка второго рода.
 
 ``` {r modeling}
-experiment = function(n, sd) {
+experiment = function(n, sd, mu, h_mu) {
+  accept = 0
+  decline = 0
   for(i in 1:1000) {
-    sample = rnorm(n = n, mean = a0, sd = sd)
+    sample = rnorm(n = n, mean = mu, sd = sd)
+    p_value = t.test(sample,alternative=c("t"),mu=h_mu)$p.value
+    if(p_value > alpha) {
+      accept = accept + 1
+    }
+    else {
+      decline = decline + 1
+    }
   }
+  
+  return(data.frame(accept = accept, decline = decline))
 }
+
+res1 = experiment(100, sd, mu = mu0, h_mu = mu0)
+res2 = experiment(100, sd, mu = mu1, h_mu = mu0)
+print(res1)
+print(res2)
 ```
+
+Оценка для ошибки первого рода 
+```{r}
+print(res1$decline / (res1$accept + res1$decline))
+```
+
+Оценка для ошибки второго рода
+```{r}
+beta = res2$accept / (res2$accept + res2$decline)
+print(beta)
+```
+
+Оценка для мощности критерия
+```{r}
+print(1 - beta)
+```
+
+Определим размер выборки для требуемой мощности критерия.
+```{r}
+power = function(result) {
+  beta = result$accept / (result$accept + result$decline)
+  return(1 - beta)
+}
+
+n = 100
+p = power(experiment(n, sd = sd, mu = mu1, h_mu = mu0))
+while(p < gamma) {
+  n = n + 1
+  p = power(experiment(n, sd = sd, mu = mu1, h_mu = mu0))
+  print(paste("N = ", n, "power = ", p))
+}
+
+print(paste("Answer:", n))
+```
+
+
+Построим зависимость мощности от размера выборки
+```{r}
+sd = 6
+ns = c(10, 50, 100, 150, 200, 250, 300, 400, 600, 800, 1000)
+powers = c()
+i = 1
+for(n in ns) {
+  powers[i] = power(experiment(n, sd = sd, mu = mu1, h_mu = mu0))
+  i = i + 1
+}
+
+plot(ns, powers, type = 'l', main = 'power by sample size', xlab = "N", ylab = "Power")
+```
+
+Построим зависимость мощности от вычилины стандартного отклонения
+```{r}
+n = 100
+power = function(result) {
+  beta = result$accept / (result$accept + result$decline)
+  return(1 - beta)
+}
+sds = c(1,2,3,4,5,6,7,8, 10, 15)
+powers = c()
+i = 1
+for(sd in sds) {
+  powers[i] = power(experiment(n, sd = sd, mu = mu1, h_mu = mu0))
+  i = i + 1
+}
+
+plot(sds, powers, type = 'l', main = 'power by sd', xlab = "sd", ylab = "Power")
+```
+
+
 ### Вопросы
 * Как зависит мощность от объёма выборки и дисперсии?
 
-С ростом объема выборки мощность критерий растет.
+С ростом объема выборки мощность критерия растет. С ростом объема выборки дисперсия критерия уменьшается, поэтому и ошибка при проверке гипотезы уменьшается.
 
-Чем меньше дисперсия, тем больше мощность.
+Чем меньше дисперсия, тем больше мощность. Вполне естественно, что чем меньше дисперсия исходной генеральной савокупности, тем меньше дисперсия критерия, тем сложнее ошибиться при проверке гипотез.
