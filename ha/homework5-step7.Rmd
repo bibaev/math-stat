@@ -1,0 +1,26 @@
+---
+title: "homework5-step7"
+output: html_document
+---
+
+```{r}
+f = file('data/tcereals.txt', open = 'r')
+lines = readLines(f)
+close(f)
+sample = c()
+i = 1
+for(line in lines[2:length(lines)]) {
+  sample[i] = as.numeric( strsplit(line, split = '\t')[[1]][2])
+  i = i + 1
+}
+sample = log(sample)
+hist(sample)
+```
+
+```{r}
+shapiro.test(sample)
+library(nortest)
+ad.test(sample)
+lillie.test(sample)
+```
+

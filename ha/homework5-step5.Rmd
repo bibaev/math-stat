@@ -1,0 +1,31 @@
+---
+title: "homework5-step5"
+output: html_document
+---
+
+```{r}
+f = file('data/tokyo_farmers.txt', open = 'r')
+lines = readLines(f)
+close(f)
+
+sample = c()
+i = 1
+for(line in lines) {
+  values = strsplit(line, split = ' ')
+  for(value in values[[1]]) {
+    sample[i] = as.numeric(value)
+    i = i + 1
+  }
+}
+n = length(sample)
+lambda = mean(sample)
+as.data.frame(table(sample))
+print(round(lambda, 2))
+print(round((1 - ppois(3.5, lambda = lambda)) * n, 2))
+addition = function(ni, pi) {
+  return((n / pi) * (ni / n  - pi)^2)
+}
+q = addition()
+
+```
+

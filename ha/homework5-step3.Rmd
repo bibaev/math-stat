@@ -1,0 +1,116 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Задайте произвольным образом математическое ожидание $a_0$ и среднеквадратическое отклонение $\sigma_0$ нормального распределения, задайте вероятность ошибки первого рода $\alpha$ и вероятность ошибки второго рода $\beta$, задайте значение $a_1: a_1 < a_0$.
+```{r}
+a0 = 10
+sd = 3
+alpha = 0.01
+beta = 0.05
+a1 = a0 - sd / 3
+
+MODELING_ITERATIONS_COUNT = 1000
+```
+
+1. Найдите объем выборки $n$, при котором вероятности ошибок первого и второго рода при использовании критерия Неймана-Пирсона не превзойдут выбранных значений $\alpha$ и $\beta$.
+```{r}
+u_alpha = qnorm(1 - alpha)
+u_beta = qnorm(beta)
+n = floor((sd^2 * (u_alpha - u_beta)^2) / (a0 - a1)^2)
+print(n)
+```
+
+2. Оцените вероятность ошибки первого рода с помощью моделирования. Для этого смоделируйте выборку объема $n$ из распределения $N(a_0,\sigma_0)$. Примените критерий для проверки гипотезы $H_0: a = a_0$ при альтернативе $H_1: a = a_1$, считая $\sigma_0$ известным.
+```{r}
+accept = 0
+u = qnorm(alpha)
+for(i in 1:MODELING_ITERATIONS_COUNT) {
+  sample = rnorm(n, a0, sd)
+  z = sqrt(n) * (mean(sample) - a0) / sd
+  if (z >= u) {
+    accept = accept + 1
+  }
+}
+
+print(paste("First type error =", round(1 - accept / MODELING_ITERATIONS_COUNT, 3)))
+```
+
+3. Оцените вероятность ошибки второго рода с помощью моделирования. Для этого смоделируйте выборку объема $n$ из распределения $N(a_1,\sigma_0)$. Примените критерий для проверки гипотезы $H_0: a = a_0$ при альтернативе $H_1: a = a_1$, считая $\sigma_0$ известным.
+```{r}
+accept = 0
+u = qnorm(alpha)
+for(i in 1:MODELING_ITERATIONS_COUNT) {
+  sample = rnorm(n, a1, sd)
+  z = sqrt(n) * (mean(sample) - a0) / sd
+  if (z >= u) {
+    accept = accept + 1
+  }
+}
+
+print(paste("Second type error =", round(accept / MODELING_ITERATIONS_COUNT, 3)))
+```
+
+4. Оцените средний объем, необходимый при применении последовательного критерия Вальда силы $(\alpha',\beta')$ по выборке из генеральной совокупности $N(a_0,\sigma_0)$, используя приближенные границы, для проверки гипотезы  $H_0: a=a_0$ при альтернативе $H_1: a=a_1$, считая $\sigma_0$ известным.
+```{r}
+ns = c()
+c0 = beta / (1 - alpha)
+c1 = (1 - beta) / alpha
+log_c0 = log(c0)
+log_c1 = log(c1)
+for(i in 1:MODELING_ITERATIONS_COUNT) {
+  n = 0
+  accept = F
+  l1 = 0
+  l2 = 0
+  while(!accept) {
+    value = rnorm(1, a0, sd)
+    l1 = l1 + log(dnorm(x = value, mean = a0, sd = sd))
+    l2 = l2 + log(dnorm(x = value, mean = a1, sd = sd))
+    if(l2 - l1 < log_c0 || l2 - l1 > log_c1) {
+      accept = T
+    }
+    n = n + 1
+  }
+  
+  ns[i] = n - 1
+}
+
+print(mean(ns))
+
+```
+
+5. Оцените средний объем, необходимый при применении последовательного критерия Вальда силы $(\alpha',\beta')$  по выборке из генеральной совокупности $N(a_1,\sigma_0)$, используя приближенные границы, для проверки гипотезы  $H_0:a=a_0$ при альтернативе $H1: a=a_1$, считая $\sigma_0$ известным.
+```{r}
+ns = c()
+c0 = beta / (1 - alpha)
+c1 = (1 - beta) / alpha
+log_c0 = log(c0)
+log_c1 = log(c1)
+
+for(i in 1:MODELING_ITERATIONS_COUNT) {
+  n = 0
+  accept = T
+  l1 = 0
+  l2 = 0
+  while(accept) {
+    value = rnorm(1, a1, sd)
+    l1 = l1 + log(dnorm(x = value, mean = a0, sd = sd))
+    l2 = l2 + log(dnorm(x = value, mean = a1, sd = sd))
+    if(l2 - l1 < log_c0 || l2 - l1 > log_c1) {
+      accept = F
+    }
+    n = n + 1
+  }
+  
+  ns[i] = n - 1
+}
+
+print(mean(ns))
+```
+
+Выводы: 
+
+* Критерий Вальда в обоих случаях требует выборки меньшего размера
+* Для того, чтобы опровергнуть неверную гипотезу понадобился больший объем выборки, чем для того, чтобы принять истинную.

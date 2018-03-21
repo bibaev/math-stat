@@ -1,0 +1,42 @@
+---
+title: "homework5"
+output: html_document
+---
+```{r}
+```
+
+```{r}
+data = c(1380, 1344, 1356, 1291, 1308, 1271, 1371, 1430, 1381, 1457, 1492, 1240, 1256, 1466, 1214, 1448,
+1510, 1395, 1507, 1264, 1293, 1251, 1380, 1386, 1411, 1434, 1302, 1529, 1352, 1494, 1348, 1464,
+1286, 1345, 1491, 1259, 1541, 1214, 1310, 1286)
+sd = 95
+alpha = 0.03
+beta = 0.05
+a0 = 1400
+a1 = 1300
+n = length(data)
+c0 = beta / (1 - alpha)
+c1 = (1 - beta) / alpha
+print(paste(round(c0, 2), round (c1, 2)))
+l1 = 0
+l2 = 0
+log_c0 = log(c0)
+log_c1 = log(c1)
+accept = TRUE
+for(i in 1:n) {
+  l1 = l1 + log(dnorm(x = data[i], mean = a0, sd = sd))
+  l2 = l2 + log(dnorm(x = data[i], mean = a1, sd = sd))
+  if(l2 - l1 < log_c0 || l2 - l1 > log_c1) {
+    accept = F
+  }
+  
+  verdict <- if (accept) {
+    "accept"
+  } else {
+    "decline"
+  }
+  print(paste(i, round(l1, 2), round(l2, 2), round(l2 - l1, 2), verdict, sep = ', '))
+}
+
+```
+
