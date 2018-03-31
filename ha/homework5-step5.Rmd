@@ -25,7 +25,13 @@ print(round((1 - ppois(3.5, lambda = lambda)) * n, 2))
 addition = function(ni, pi) {
   return((n / pi) * (ni / n  - pi)^2)
 }
-q = addition()
+r = 5
 
+qs = c(addition(584, dpois(0, lambda)), addition(398, dpois(1, lambda)), addition(168, dpois(2, lambda)), addition(35, dpois(3, lambda)), addition(15, 1 - ppois(3.5, lambda)))
+print(qs)
+q = sum(qs)
+print(round(q, 2))
+alpha = 0.05
+print(qchisq(0.95, df = 3))
 ```
 
