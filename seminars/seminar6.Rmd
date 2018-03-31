@@ -1,0 +1,126 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+## Задача 1
+
+Копипаст из примера.
+
+```{r}
+connected.samples.generation = function(mu_list,sko_list,n,cor)
+{
+  X0<-rnorm(n)
+  Y0<-rnorm(n)
+  
+  cor<-matrix(c(1,cor,cor,1),nrow=2)
+  K<-cor*(sko_list%*%t(sko_list))
+  A<-chol(K)
+  newX<-c()
+  newY<-c()
+  for(t in 1:n)
+  {
+    hh<-t(A)%*%c(X0[t],Y0[t])
+    newX[t]<-hh[1]+mu_list[1]
+    newY[t]<-hh[2]+mu_list[2]
+  }
+  
+  sample_1<-newX
+  sample_2<-newY
+  
+  return (data.frame(cbind(sample_1,sample_2)))
+}
+```
+
+Параметры
+```{r}
+mu_list<-c(2,2.5)
+sko_list<-c(1,2)
+cor=0.7
+n=100
+alpha = 0.05
+```
+
+Исследование
+```{r}
+sample1 = c()
+sample2 = c()
+accept = c(0, 0)
+for(i in 1:1000) {
+  samples = connected.samples.generation(mu_list, sko_list, n, cor)
+  sample1 = samples['sample_1'][[1]]
+  sample2 = samples['sample_2'][[1]]
+  
+  paired = t.test(sample1, sample2, alternative = c("t"), paired = T)
+  if(paired$p.value >= alpha) {
+    accept[1] = accept[1] + 1
+  }
+  not_paired = t.test(sample1, sample2, alternative = c("t"), paired = F)
+  if(not_paired$p.value >= alpha) {
+    accept[2] = accept[2] + 1
+  }
+}
+
+print(accept)
+```
+
+Парный 
+```{r}
+round(1 - accept[1] / 1000, 3)
+```
+
+Непарный
+```{r}
+round(1 - accept[2] / 1000, 3)
+```
+
+Вопросы:
+
+* В чем различие парного и непарного ttest?
+
+В парном тесте используется информация, что пары наблюдений связаны (например наблюдения об одном и том же объекте).
+
+* В каком случае мощность получилась больше?
+
+В парном тесте
+
+
+## Задача 2
+```{r}
+n = 50
+sample1 = rnorm(n, 10, 3)
+sample2 = rnorm(n, 10, 3)
+sample3 = rnorm(n, 10, 3)
+```
+
+Вопросы:
+
+* Почему мы смотрим на квантили распределения Фишера?
+
+Статистика критерия построена так, что подчиняется распределнию Фишера.
+
+## Задача 3
+```{r}
+accept = c(0, 0)
+for (i in 1:1000) {
+  sample1 = c(rnorm(10, mean = 5, 3), runif(20, 0, 10))
+  sample2 = c(rnorm(10, mean = 8, 3), runif(20, 3, 13))
+  t_test = t.test(sample1, sample2, alternative = c('t'))
+  if(t_test$p.value >= alpha) {
+    accept[1] = accept[1] + 1
+  }
+  wilcox_test = wilcox.test(sample1, sample2, alternative = c('t'))
+  if(wilcox_test$p.value >= alpha) {
+    accept[2] = accept[2] + 1
+  }
+}
+
+print(accept)
+```
+Тест стьюдента оказался более мощным
+Вопросы:
+
+* Что такое гипотеза о сдвиге? Приведите примеры гипотез H0 и H1
+для которых 1. сдвиг есть 2. сдвига нет (H0!=H1)
+
+Гипотеза о том, что одна функция распределения больше другой функции распределения во всех точках вещественной оси. 
+ 

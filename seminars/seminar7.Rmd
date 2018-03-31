@@ -1,0 +1,79 @@
+---
+title: "seminar7"
+author: "bibaev"
+date: "3/28/2018"
+output: html_document
+---
+## Задача 1
+```{r}
+N = 1000
+
+half = function(n) {
+  return(n / 2)
+}
+
+one_third = function(n) {
+  return(n / 3)
+}
+
+two_third = function(n) {
+  return(2 * one_third(n))
+}
+
+const = function(value) {
+  return(function(n) {
+    return(value)
+  })
+}
+
+experiment = function(n, n1_sup, n2_sup, p1, p2) {
+  N1 = n1_sup(n)
+  N2 = n2_sup(n)
+}
+N1 = 100
+N2 = 250
+p1 = 0.5
+p2 = 0.5
+alpha = 0.05
+accept = c(0, 0, 0)
+for(i in 1:N) {
+  sample1<-rbinom(N1, 1, p1)
+  sample2<-rbinom(N2, 1, p2)
+  sample<-data.frame(rbind(cbind(rep('s1',N1),sample1),cbind(rep('s2',N2), sample2)))
+  names(sample) = c('Treatment Group','Has Stroke')
+  tab=table(sample)
+  
+  check = function(test_result) {
+    if(test_result$p.value >= alpha) {
+      return(1)
+    }
+    return(0)
+  }
+  
+  accept[[1]] = accept[[1]] + check(chisq.test(tab, correct = F))
+  accept[[2]] = accept[[2]] + check(chisq.test(tab, correct = T))
+  accept[[3]] = accept[[3]] + check(fisher.test(tab))
+  
+  table = tab
+}
+
+print(tab)
+first_error_type_ratio = accept / N
+print(first_error_type_ratio)
+```
+
+```{r}
+power = 0.95
+
+```
+
+Вопросы:
+
+* К чему приводит использование поправки?В каком случае мощность будет выше (N1+N2=N): 1. N1 = N2 2. N1=2*N2
+
+## Задача 2
+
+
+## Задача 3
+
+

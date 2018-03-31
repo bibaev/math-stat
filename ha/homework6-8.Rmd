@@ -1,0 +1,74 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Шаг 8
+
+Проанализируйте влияние объема выборки на мощности и вероятности ошибок 1го рода критериев Стьюдента и Вилкоксона в случае нарушения предположения о нормальности генеральных совокупностей (рассматриваем независимые генеральные совокупности).
+Обе выборки получены из генеральных совокупностей, являющихся смесью на 2/3 состоит из нормального распределения и на 1/3 из равномерного распределения. Объемы итоговых выборок по 50, 100, 1000, 10000
+
+```{r}
+N = 1000
+
+experiment = function(n) {
+  t_accept = 0
+  wilcox_accept = 0
+  alpha = 0.05
+  for(i in 1:N) {
+    sample1 = append(rnorm(n = 2 * n / 3, mean = 0,  sd = 2), runif(n / 3, min = -1, max = 1))
+    sample2 = append(rnorm(n = 2 * n / 3, mean = 0,  sd = 2), runif(n / 3, min = -1, max = 1))
+    if(t.test(sample1, sample2, simulate.p.value = TRUE)$p.value >= alpha) {
+      t_accept = t_accept + 1
+    }
+    
+    if(wilcox.test(sample1, sample2)$p.value >= alpha) {
+      wilcox_accept = wilcox_accept + 1
+    }
+  }
+  
+  print(paste('n =', n, ", first type error ratio"))
+  print(paste("t test:", 1 - t_accept / N))
+  print(paste("wilcox:", 1 - wilcox_accept / N))
+  
+  t_accept = 0
+  wilcox_accept = 0
+  
+  for(i in 1:N) {
+    sample1 = append(rnorm(n = 2 * n / 3, mean = 0,  sd = 2), runif(n / 3, min = -1, max = 1))
+    sample2 = append(rnorm(n = 2 * n / 3, mean = 1,  sd = 3), runif(n / 3, min = -1, max = 3))
+    if(t.test(sample1, sample2)$p.value >= alpha) {
+      t_accept = t_accept + 1
+    }
+    
+    if(wilcox.test(sample1, sample2)$p.value >= alpha) {
+      wilcox_accept = wilcox_accept + 1
+    }
+  }
+  
+  print(paste("power"))
+  print(paste("t test: ",1 - t_accept / N))
+  print(paste("wilcox:", 1 - wilcox_accept / N))
+}
+```
+n = 50
+```{r}
+experiment(50)
+```
+
+n = 100
+```{r}
+experiment(100)
+```
+
+n = 1000
+```{r}
+experiment(1000)
+```
+
+n = 10000
+```{r}
+experiment(10000)
+```
+
+
