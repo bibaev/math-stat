@@ -5,9 +5,54 @@ date: "3/28/2018"
 output: html_document
 ---
 ## Задача 1
-```{r}
-N = 1000
 
+Проверка однородности: $1000$ раз смоделируйте две выборки из
+Биномиального распределения размера $N_1$ и $N_2$. В первой выборке
+вероятность успеха - $p_1$, во второй $p_2$. Сравните выборки на
+однородность с помощью $\chi^2$с поправкой, $\chi^2$ без поправки и точного
+теста Фишера. Задайте желаемую мощность, найдите $N_1$ и $N_2$,
+необходимые для ее достижения.
+Найдите с помощью моделирования ошибку первого рода.
+
+Сначала найдем ошибку первого рода
+```{r}
+alpha = 0.05
+check = function(test_result) {
+    if(test_result$p.value >= alpha) {
+      return(1)
+    }
+    return(0)
+  }
+N = 1000
+N1 = 100
+N2 = 250
+p1 = 0.5
+p2 = 0.5
+
+accept = c(0, 0, 0)
+for(i in 1:N) {
+  sample1<-rbinom(N1, 1, p1)
+  sample2<-rbinom(N2, 1, p2)
+  sample<-data.frame(rbind(cbind(rep('s1',N1),sample1),cbind(rep('s2',N2), sample2)))
+  names(sample) = c('Treatment Group','Has Stroke')
+  tab=table(sample)
+  
+  accept[[1]] = accept[[1]] + check(chisq.test(tab, correct = F))
+  accept[[2]] = accept[[2]] + check(chisq.test(tab, correct = T))
+  accept[[3]] = accept[[3]] + check(fisher.test(tab))
+  
+  table = tab
+}
+
+print(tab)
+first_error_type_ratio = (N - accept) / N
+print(paste("without correction", first_error_type_ratio[1]))
+print(paste("with correction", first_error_type_ratio[2]))
+print(paste("fisher", first_error_type_ratio[3]))
+```
+
+Теперь исследуем мощность критериев
+```{r}
 half = function(n) {
   return(n / 2)
 }
@@ -27,52 +72,148 @@ const = function(value) {
 }
 
 experiment = function(n, n1_sup, n2_sup, p1, p2) {
-  N1 = n1_sup(n)
-  N2 = n2_sup(n)
-}
-N1 = 100
-N2 = 250
-p1 = 0.5
-p2 = 0.5
-alpha = 0.05
-accept = c(0, 0, 0)
-for(i in 1:N) {
-  sample1<-rbinom(N1, 1, p1)
-  sample2<-rbinom(N2, 1, p2)
-  sample<-data.frame(rbind(cbind(rep('s1',N1),sample1),cbind(rep('s2',N2), sample2)))
-  names(sample) = c('Treatment Group','Has Stroke')
-  tab=table(sample)
+  N1 = round(n1_sup(n))
+  N2 = round(n2_sup(n))
   
-  check = function(test_result) {
-    if(test_result$p.value >= alpha) {
-      return(1)
-    }
-    return(0)
+  accept = c(0, 0, 0)
+  for(i in 1:N) {
+    sample1<-rbinom(N1, 1, p1)
+    sample2<-rbinom(N2, 1, p2)
+    sample<-data.frame(rbind(cbind(rep('s1',N1),sample1),cbind(rep('s2',N2), sample2)))
+    names(sample) = c('Treatment Group','Has Stroke')
+    tab=table(sample)
+    
+    accept[[1]] = accept[[1]] + check(chisq.test(tab, correct = F))
+    accept[[2]] = accept[[2]] + check(chisq.test(tab, correct = T))
+    accept[[3]] = accept[[3]] + check(fisher.test(tab))
   }
   
-  accept[[1]] = accept[[1]] + check(chisq.test(tab, correct = F))
-  accept[[2]] = accept[[2]] + check(chisq.test(tab, correct = T))
-  accept[[3]] = accept[[3]] + check(fisher.test(tab))
+  powers = (n - accept) / n
+  print(paste("N1 =", N1, "N2 =", N2))
+  print(paste("without correction", powers[1]))
+  print(paste("with correction", powers[2]))
+  print(paste("fisher", powers[3]))
   
-  table = tab
+  return(min(powers))
 }
-
-print(tab)
-first_error_type_ratio = accept / N
-print(first_error_type_ratio)
 ```
 
+Случай N1 = N2
 ```{r}
-power = 0.95
-
+needed_power = 0.95
+N = 100
+power = experiment(n = N, n1_sup = half, n2_sup = half, p1 = 0.2, p2 = 0.4)
+while(power < needed_power) {
+  N = N * 1.3
+  power = experiment(n = N, n1_sup = half, n2_sup = half, p1 = 0.2, p2 = 0.4)
+}
+```
+Случай $N1 = 2 * N2$
+```{r}
+N = 100
+power = experiment(n = N, n1_sup = one_third, n2_sup = two_third, p1 = 0.2,p2 =  0.4)
+while(power < needed_power) {
+  N = N * 1.3
+  power = experiment(n = N, n1_sup = one_third, n2_sup = two_third, p1 = 0.2, p2 = 0.4)
+}
 ```
 
 Вопросы:
 
-* К чему приводит использование поправки?В каком случае мощность будет выше (N1+N2=N): 1. N1 = N2 2. N1=2*N2
+* К чему приводит использование поправки? 
+
+В нашем случае ни к чему хорошему - вероятность ошибки первого рода увеличилась, а мозность уменьшилась.
+
+* В каком случае мощность будет выше (N1+N2=N): 1. N1 = N2 2. N1=2 * N2
+
+В первом случае
 
 ## Задача 2
 
+Проверка независимости: Пусть у Вас есть два биномиальных(1/0)
+признака, 1000 раз смоделируйте случаи, когда они зависимы и когда
+нет, примените chisq.test, посчитайте мощность и ошибку первого рода
+соответственно.
+Как моделировать зависимые выборки: первая выборка p=p1, а для
+второй есть p20 и p21 (в зависимости от элемента 1 выборки (0: p20,
+1: p21))
+
+Зададим все параметры
+```{r}
+N = 40
+p1 = 0.3
+p2 = 0.8
+p20 = 0.2
+p21 = 0.6
+```
+
+
+Напишем вспомогательные функции для моделирования зависимой выборки
+```{r}
+
+flip = function(value) {
+  random_value = runif(1)
+  if(value == 0) {
+    if(random_value < p20) {
+      return(1)
+    } else {
+      return(0)
+    }
+  } else {
+    if(random_value < p21) {
+      return(0)
+    } else {
+      return(1)
+    }
+  }
+}
+
+dependent = function(sample) {
+  result = c()
+  n = length(sample)
+  for(i in 1:n) {
+    result[i] = flip(sample[i])
+  }
+  
+  return(result)
+}
+
+independent = function(sample) {
+  n = length(sample)
+  return(rbinom(n, size = 1, prob = p2))
+}
+
+dependent(c(0, 0, 0))
+dependent(c(1, 1, 1))
+```
+
+Проведем моделирование
+```{r}
+options(warn=-1)
+experiment = function(sample2_generator) {
+  accept = 0
+  for(i in 1:1000) {
+    sample1 = rbinom(n = N, size = 1, prob = p1)
+    sample2 = sample2_generator(sample1)
+    sample<-data.frame(rbind(cbind(rep('s1', length(sample1)),sample1),cbind(rep('s2',length(sample2)), sample2)))
+    tab=table(sample)
+    accept = accept + check(chisq.test(tab))
+  }
+  
+  return(1 - accept / 1000)
+}
+```
+
+```{r}
+experiment(dependent)
+experiment(independent)
+```
+
+Вопросы:
+
+* Приведите пример задачи, где нужна проверка независимости признаков
+
+Задача восстановления регрессии, среди признаков есть рост и вес.
 
 ## Задача 3
 
