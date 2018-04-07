@@ -217,4 +217,47 @@ experiment(independent)
 
 ## Задача 3
 
+1000 раз сгенерируйте следующие выборки например размера N=20:
+с линейной связью (можно с помощью моделирования связных
+выборок, а можно y = ax + b + noise)
+c НЕлинейной связью (монотонной)
+Примените критерии: корреляции Пирсона, Спирмена, Кендалла.
+Сравните их мощности
+
+```{r}
+alpha = 0.05
+n = 20
+accept = c(0, 0, 0)
+accept_nelin = c(0, 0, 0)
+for (i in 1:1000) {
+  x = rnorm(n, mean = 10, sd = 3)
+  y_lin = 0.6 * x + 1 + rnorm(n, mean = 2, sd = 5)
+  y_nelin = 8^x + x^2 + 5 + rnorm(n, mean = 4, sd = 5)
+  
+  accept[1] = accept[1] + check(cor.test(x, y_lin, method = "p"))
+  accept[2] = accept[2] + check(cor.test(x, y_lin, method = "s"))
+  accept[3] = accept[3] + check(cor.test(x, y_lin, method = "k"))
+  
+  accept_nelin[1] = accept_nelin[1] + check(cor.test(x, y_nelin, method = "p"))
+  accept_nelin[2] = accept_nelin[2] + check(cor.test(x, y_nelin, method = "s"))
+  accept_nelin[3] = accept_nelin[3] + check(cor.test(x, y_nelin, method = "k"))
+}
+
+print(accept)
+print(accept_nelin)
+```
+
+В случае нелинейной зависимости ни один из методов не увидел 
+
+Сгенерируйте две связанные выборки, где одна шкала - порядковая
+(например - степень тяжести заболевания от 1 до 6). Примените к ним
+критерии, посмотрите на p-value.
+Не меняя вторую выборку, переобозначьте первую (например, по
+новым правилам теперь степени тяжести заболевания кодируются не
+от 1 до 6, а 1, 20, 47 итд ) - примените тесты еще раз, сравните
+результаты.
+
+```{r}
+
+```
 
