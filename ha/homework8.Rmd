@@ -1,0 +1,24 @@
+---
+title: "homework8"
+output: html_document
+---
+
+Шаг 1
+Постройте линейную регрессионную модель зависимости веса новорожденного от расы и образования матери, срока беременности, а также информации о курении матери во время беременности.
+
+```{r}
+table = read.table("data/weights.txt", header = T)
+head(table)
+y = table$weight
+fit = glm(formula = y ~ table$race + table$educ + table$smoke + table$preg)
+info = summary(fit)
+print(info)
+```
+
+Шаг 2
+Найдите оценку дисперсии ошибок наблюдений, точность 95% доверительного интервала для параметра при сроке беременности и коэффициент детерминации
+
+Дисперсия ошибок наюлюдений.
+```{r}
+print(info$dispersion)
+```
