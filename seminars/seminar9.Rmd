@@ -1,0 +1,136 @@
+---
+title: "seminar9"
+author: "bibaev"
+date: "4/11/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Задача 1
+
+Постройте несколько переменных xi (N = 30), по ним постройте y c
+нормально распределенными остатками c м.о. = 0. Добавьте выбросы.
+```{r}
+N = 30
+x1<-rnorm(N,12,4)
+x2<-rnorm(N,-3,2)
+xleft<--rnorm(N,-3,2)+0.1*rnorm(N)
+```
+
+```{r}
+y<-0.5*x1 + 6*x2+ rnorm(N)
+
+yo=y
+yo[1] = -200
+yo[5] = 150
+```
+
+
+
+Сравните:
+обыкновенную линейную регрессию
+```{r}
+usual = glm(formula = y ~ x1 + x2 + x_left)
+summary(usual)
+plot(usual)
+```
+
+робастную регрессию с M-оценками с функцией Хубера
+```{r}
+library(MASS)
+ridge = rlm(y ~ x1 + x2 + x_left, psi = psi.huber)
+summary(ridge)
+plot(ridge)
+```
+регрессию с оценками LMS
+```{r}
+lms = lqs(y ~ x1 + x2 + x_left, method = "lms")
+lms
+```
+регрессию с оценками LTS
+
+```{r}
+lts = lqs(y ~ x1 + x2 + x_left, method = c("lts"))
+lts
+```
+Cравните результаты.
+
+## Задача 2
+Загрузить данные binary.csv.
+```{r}
+data = read.csv("data/binary.csv", sep = ",")
+head(data)
+```
+
+Переменная rank - должна быть
+фактором (так как она категориальная).
+```{r}
+data$rank = factor(data$rank)
+```
+
+Построить логистическую регрессию, где зависимая переменная -
+admit. 
+```{r}
+model = glm(formula = admit ~ gre + gpa + rank, data = data, family ="binomial") 
+```
+
+Посмотреть на результат. 
+```{r}
+summary(model)
+```
+
+Что значат полученные
+коэффициенты? 
+
+Получите доверительные интервалы для
+коэффициентов. 
+```{r}
+confint(model)
+```
+
+Примените критерий Вальда для проверки общей
+значимости переменной rank, для проверки значимости одной
+переменной. 
+```{r}
+library(aod)
+wald.test(b = coef(model), Sigma = vcov(model), Terms = 4:6)
+wald.test(b = coef(model), Sigma = vcov(model), Terms = c(4))
+wald.test(b = coef(model), Sigma = vcov(model), Terms = c(5))
+wald.test(b = coef(model), Sigma = vcov(model), Terms = c(6))
+```
+
+Перейдите от оценок коэффициентов к оценкам odds-ratio
+(точечные оценки и доверительные интервалы).
+```{r}
+ints = confint(model)
+print(exp(1)^ints)
+```
+
+оценки
+```{r}
+print(exp(1)^model$coefficients)
+```
+
+
+## Задача 3
+Постройте предсказанные вероятности события (admit=1) для
+каждого уровня категориальной переменной rank, зафиксировав gre и
+gra как средние значения этих переменных.
+Для этого:
+1 Создаем наблюдения, для которых хотим получить результат.
+Каждое наблюдение - это c(rank, mean(gre), mean(gra))
+```{r}
+newdata1 = with(data, data.frame(gre = mean(data$gre), gpa =
+mean(data$gpa), rank = factor(1:4)))
+newdata1
+```
+
+2 Используя predict, получаем вероятности.
+```{r}
+newdata1$rankP = predict(model, newdata = newdata1, type = "response")
+newdata1
+```
+
