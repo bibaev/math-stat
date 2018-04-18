@@ -1,0 +1,129 @@
+---
+title: "seminar10"
+author: "bibaev"
+date: "4/18/2018"
+output: html_document
+---
+
+Смоделируйте нормально распределенную выборку размера N=30.
+```{r}
+create_sample = function(n) {
+  return(rnorm(n = n, mean = 5, sd = 3))
+}
+head(create_sample(30))
+```
+
+Постройте несколько раз распределения бутстрапных средних, делая
+выборки размера N с повторениями (boot=10K).
+```{r}
+boot = 10000
+N = 30
+calc_means = function(n, data) {
+  means = c()
+  for(i in 1:boot) {
+    new_sample = sample(x = data, size = N, replace=T)
+    means[i] = mean(new_sample)
+  }
+  return(means)
+}
+
+data = create_sample(N)
+print(mean(data))
+hist(calc_means(N, data))
+hist(calc_means(N, data))
+```
+
+
+* Повторите для N=300.
+```{r}
+N = 300
+data = create_sample(N)
+print(mean(data))
+hist(calc_means(N, data))
+hist(calc_means(N, data))
+```
+
+* Повторите для N=3000.
+```{r}
+N = 3000
+data = create_sample(N)
+print(mean(data))
+hist(calc_means(N, data))
+hist(calc_means(N, data))
+```
+
+* Как меняется распределение средних в зависимости от N?
+
+Уменьшается дисперсия
+
+* Присутствует ли смещение для N=3000?
+
+# Задание 2
+1. Смоделируйте экспоненциальную выборку размера N. Постройте
+доверительный интервал для мат. ожидания.
+```{r}
+N = 300
+lambda = 7
+data = rexp(n = N, rate = lambda)
+mean_list = c()
+for(i in 1:boot) {
+  mean_list[i] = mean(sample(x = data, size = N, replace = T))
+}
+print(paste("True mean =", round(1 / lambda, 3)))
+quantile(mean_list, probs = c(0.025, 0.975))
+```
+
+2. Постройте линеиную регрессионную модель, постройте дов.
+интервалы для коэффициентов модели.
+```{r}
+extract_rows = function(data, rows) {
+  result = c()
+  for(row in rows) {
+    result = append(result, data[row, ])
+  }
+  return(matrix(data = result, nrow = length(rows), ncol = length(data[1, ]), byrow = T))
+}
+```
+
+
+```{r}
+N = 100
+x1 = rnorm(n = N, mean = 10, sd = 1)
+x2 = rnorm(n = N, mean = 3, sd = 2)
+x_left = rnorm(n = N, mean = -2, 3)
+eps = rnorm(n = N, mean = 0, sd = 1.5)
+betas = c(3, 2, 1, 0)
+y = betas[1] + betas[2] * x1 + betas[3] * x2 + betas[4] * x_left + eps
+dataset = matrix(data = c(y, x1, x2, x_left), nrow = N, ncol = 4)
+head(dataset)
+coefs = c()
+for(i in 1:boot) {
+  bootstrapped_rows = sample(x = 1:N, size = N, replace = T)
+  bootstrapped = extract_rows(dataset, bootstrapped_rows)
+  model = glm(formula = bootstrapped[, 1] ~ bootstrapped[, 2] + bootstrapped[, 3] + bootstrapped[, 4])
+  coefs = append(coefs, model$coefficients)
+}
+
+result = matrix(data = coefs, nrow = boot, ncol = 4, byrow = T)
+quantile(result[, 1], probs = c(0.025, 0.975))
+quantile(result[, 2], probs = c(0.025, 0.975))
+quantile(result[, 3], probs = c(0.025, 0.975))
+quantile(result[, 4], probs = c(0.025, 0.975))
+```
+
+# Задание 3
+Смоделируйте две НЕНОРМАЛЬНЫЕ связанные выборки. Примените
+парный permutation и wilcoxon, посчитайте мощность и ошибку
+первого рода.
+
+```{r}
+sample1 = append(rnorm(N,mat,2), runif(N,2,3))
+sample2 = sample1 + shift + rnorm(2*N)
+alpha = 0.05
+boot = 2000
+acceptance = 0
+for(i in 1:1000) {
+  
+}
+```
+
