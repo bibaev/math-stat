@@ -63,7 +63,7 @@ xi3 = function(n) {
 * задайте нормально распределенную случайную величину $\varepsilon, E\varepsilon = 0, D\varepsilon < 10 D\xi_1, D\varepsilon < 10D\xi_3$
 ```{r}
 epsilon = function(n) {
-  return(n, mean = 0, sd = 3)
+  return(rnorm(n, mean = 0, sd = 3))
 }
 ```
 
@@ -87,11 +87,32 @@ eta = function(xi1, xi2, xi3, eps) {
 Смоделируйте выборку объемом 100 из случайного вектора $(η,ξ_1,ξ_2,ξ_3)$
 ```{r}
 sample = function(n) {
-  first = 
+  first = xi1(n)
+  second = xi2(first)
+  third = xi3(n)
+  eps = epsilon(n)
+  return(matrix(data = c(eta(first, second, third, eps), first, second, third), nrow = n, ncol = 4))
 }
 ```
 
+```{r}
+data = sample(100)
+print(head(data))
+```
+
+
 На основе полученной выборки найдите МНК оценки и ридж-оценки параметров $β_0,β_1,β_2,β_3$.
+```{r}
+model = glm(formula = data[, 1] ~ data[, 2] + data[, 3] + data[, 4])
+summary(model)
+```
+
+```{r}
+library(MASS)
+ridge = rlm(formula = data[, 1] ~ data[, 2] + data[, 3] + data[, 4], psi = psi.huber)
+summary(ridge)
+```
+
 
 Попробуйте 2 разных параметра ридж-регрессии.
 
