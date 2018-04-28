@@ -1,0 +1,61 @@
+---
+title: "seminar11"
+author: "bibaev"
+date: "4/20/2018"
+output: html_document
+---
+
+## Задача 1
+Используя данные psych из пакета постройте кривую дожития
+(для всех пациентов) НЕ используя пакетную функцию.
+Постройте точечные доверительные интервалы для KM оценок
+(интервалы трех видов - линейные (plain), log, log-log ). (тут уже
+используя пакет)
+```{r}
+library(survival)
+library(KMsurv)
+data(psych);
+print(psych)
+my.surv.object <- Surv(psych$age, psych$age+psych$time, psych$death)
+fit = survfit(my.surv.object ~ 1,conf.type = 'plain')
+summary(fit)
+```
+
+```{r}
+plot(fit,col="black")
+```
+
+## Задача 2
+
+Возьмите данные из задания 1. Постройте объект только с правым цензурированием. 
+```{r}
+my.surv.object <- Surv(age+time, death)
+```
+
+Постройте кривые отдельно для
+каждого пола. 
+```{r}
+fit = survfit(my.surv.object ~ sex)
+summary(fit)
+plot(fit, col = c("blue", "pink"))
+```
+
+Сравните кривые используя log rank test и
+Gehan-Wilcoxon test.
+
+```{r}
+survdiff(my.surv.object ~ sex, rho=0)
+survdiff(my.surv.object ~ sex, rho=1)
+```
+
+Возьмите данные lung, определите, для каких категориальных
+переменных различаются кривые (нужен вывод).
+```{r}
+
+```
+
+Постройте модель Кокса.
+```{r}
+
+```
+
